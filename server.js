@@ -1,5 +1,5 @@
-const e = require('express');
 const express = require('express');
+const fs = require('fs');
 const path = require('path');
 const db = require('./db/db.json');
 
@@ -48,6 +48,19 @@ app.post('/api/notes', (req, res) => {
         };
 
         console.log(response);
+
+        // reads the db.json data and converts it into a Javascript object
+        const readNotes = JSON.parse(fs.readFileSync(`./db/db.json`));
+        console.log(readNotes);
+        // push the newNote object onto the newly generated Javascript object from the database
+        readNotes.push(newNote);
+        console.log(readNotes);
+        // converts the Javascript object into a string
+        const noteString = JSON.stringify(readNotes);
+
+        // the new string is pushed back into the database
+        fs.writeFile(`./db/db.json`, noteString, (err) =>
+        err ? console.error(err) : console.log(`New note has been written to the JSON file`));
         res.status(201).json(response);
     } else {
         res.status(500).json(`Error in creating a new note`);

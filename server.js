@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const util = require('util');
 const db = require('./db/db.json');
 
 // helper method that generates unique IDs
@@ -9,6 +10,7 @@ const uuid = require('./helper/uuid');
 const app = express();
 const PORT = 3001;
 
+// Middleware for parsing JSON and urlencoded form data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -18,8 +20,14 @@ app.use(express.static('public'));
 app.get('/notes', (req, res) => 
 res.sendFile(path.join(__dirname, 'public/notes.html')));
 
+// this creates a promise of the fs.readFile 
+const readFromFile = util.promisify(fs.readFile);
+
 // get request for notes that sends back a JSON file
-app.get('/api/notes', (req, res) => res.json(db));
+app.get('/api/notes', (req, res) => {
+    // by using a promise, the saved notes are instantly loaded onto the new page
+    readFromFile('./db/db.json').then((data) => res.json(JSON.parse(data)));
+});
 
 // sends the index.html file for when there are no matches to the requests above this
 app.get('*', (req, res) => 

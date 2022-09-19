@@ -75,5 +75,24 @@ app.post('/api/notes', (req, res) => {
     }
 })
 
+app.delete('/api/notes/:note_id', (req, res) => {
+    res.json(`${req.method} request received`);
+    console.log("request to delete a note has been received");
+    test = req.params.note_id;
+    console.log(test);
+    // reads the db.json data and converts it into a Javascript object
+    var readNotes = JSON.parse(fs.readFileSync(`./db/db.json`));
+    // console.log(readNotes);
+    readNotes = readNotes.filter(function(notes) {
+        console.log(notes);
+        console.log(notes.note_id);
+        return notes.note_id !== `${test}`;
+    });
+    console.log(readNotes);
+    const noteString = JSON.stringify(readNotes);
+    fs.writeFile(`./db/db.json`, noteString, (err) =>
+        err ? console.error(err) : console.log(`Note has been deleted from list`));
+});
+
 app.listen(PORT, () => 
 console.log(`Note app listening at http://localhost:${PORT}`));

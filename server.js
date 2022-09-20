@@ -1,7 +1,10 @@
+// dependencies 
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const util = require('util');
+
+// access to our stored database
 const db = require('./db/db.json');
 
 // helper method that generates unique IDs
@@ -10,10 +13,8 @@ const uuid = require('./helper/uuid');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware for parsing JSON and urlencoded form data
+// Middleware for parsing JSON
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 app.use(express.static('public'));
 
 // get request for /notes will send the notes.html file
@@ -35,11 +36,8 @@ res.sendFile(path.join(__dirname, 'public/index.html')));
 
 // post request to save new notes
 app.post('/api/notes', (req, res) => {
-    res.json(`${req.method} request received`);
-
-    // the post request is logged into the terminal when the save button is clicked
-    console.info(`${req.method} request received, a note has been created`);
-
+    // res.json(`${req.method} request received`);
+    console.log("Request to post a note has been received");
     // destructuring of the items in req.body
     const { title, text } = req.body;
 
@@ -50,49 +48,36 @@ app.post('/api/notes', (req, res) => {
             note_id: uuid(),
         };
 
-        const response = {
-            status: 'success',
-            body: newNote,
-        };
-
-        console.log(response);
-
         // reads the db.json data and converts it into a Javascript object
         const readNotes = JSON.parse(fs.readFileSync(`./db/db.json`));
-        console.log(readNotes);
         // push the newNote object onto the newly generated Javascript object from the database
         readNotes.push(newNote);
-        console.log(readNotes);
         // converts the Javascript object into a string
         const noteString = JSON.stringify(readNotes);
 
         // the new string is pushed back into the database
         fs.writeFile(`./db/db.json`, noteString, (err) =>
-        err ? console.error(err) : console.log(`New note has been written to the JSON file`));
-        res.status(201).json(response);
+        err ? console.error(err) : console.log(`New note has been created`));
+        res.status(201).json(readNotes);
     } else {
         res.status(500).json(`Error in creating a new note`);
     }
 })
 
+// delete request to clear out a note on the click of the trash bin
 app.delete('/api/notes/:note_id', (req, res) => {
-    res.json(`${req.method} request received`);
-    console.log("request to delete a note has been received");
-    test = req.params.note_id;
-    console.log(test);
+    console.log("Request to delete a note has been received");
+    checkNote = req.params.note_id;
     // reads the db.json data and converts it into a Javascript object
-    var readNotes = JSON.parse(fs.readFileSync(`./db/db.json`));
-    // console.log(readNotes);
+    let readNotes = JSON.parse(fs.readFileSync(`./db/db.json`));
+    // filter method returns a new array without the deleted note
     readNotes = readNotes.filter(function(notes) {
-        console.log(notes);
-        console.log(notes.note_id);
-        return notes.note_id !== `${test}`;
+        return notes.note_id !== `${checkNote}`;
     });
-    console.log(readNotes);
     const noteString = JSON.stringify(readNotes);
     fs.writeFile(`./db/db.json`, noteString, (err) =>
-        err ? console.error(err) : console.log(`Note has been deleted from list`));
+        err ? console.error(`Note not deleted`) : console.log(`Success, note has been deleted from list`));
+        res.status(202).json(readNotes);
 });
 
-app.listen(PORT, () => 
-console.log(`Note app listening at http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Note app listening at http://localhost:${PORT}`));
